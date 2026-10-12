@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Our Greatest Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link rel="icon" href="src/assets/favicon.ico" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a0a0a;
+            --text-gold: #e2c08d;
+            --text-white: #ffffff;
+            --overlay: rgba(0, 0, 0, 0.4);
+            --pink-accent: #fdf2f2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body, html {
+            height: 100%;
+            width: 100%;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-white);
+            overflow: hidden; 
+            position: fixed; 
+        }
+
+        /* --- HORIZONTAL STORYBOOK CONTAINER --- */
+        .storybook {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow-x: auto; 
+            overflow-y: hidden;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-x;
+        }
+
+        .storybook::-webkit-scrollbar { display: none; }
+
+        .page {
+            flex: 0 0 100vw;
+            width: 100vw;
+            height: 100vh;
+            scroll-snap-align: start;
+            scroll-snap-stop: always;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .page-bg {
+            position: absolute;
+            top: 0; left: 0;
+            width: 130%; height: 100%;
+            background-size: cover;
+            background-position: center;
+            z-index: 1;
+            will-change: transform;
+            /* Added transition for smoother image loading feel */
+            transition: opacity 1s ease-in-out;
+        }
+		.page-bg-new {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+
+			background-size: cover;
+			background-position: center;
+			background-repeat: no-repeat;
+
+			z-index: 1;
+		}
+
+        .page-overlay {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7));
+            z-index: 2;
+        }
+
+        .content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            max-width: 900px;
+            padding: 2.5rem;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 7vw, 4.5rem);
+            font-weight: 400;
+            margin-bottom: 1.5rem;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: all 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+
+        p {
+            font-size: clamp(0.75rem, 2.5vw, 1rem);
+            line-height: 1.8;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            font-weight: 300;
+            color: rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.4s;
+        }
+
+        .is-visible h1, .is-visible p, .is-visible .reveal-name, .is-visible .meaning-box {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* --- THE REVEAL MOMENT --- */
+        .reveal-page .page-overlay {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));
+        }
+
+        .reveal-name {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 12vw, 7rem);
+            font-weight: 400;
+            opacity: 0;
+            transform: scale(0.85);
+            transition: all 2.5s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            display: inline-block;
+            color: var(--text-white);
+            margin: 1rem 0;
+            text-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .sub-text {
+            color: rgba(255,255,255,0.8);
+            font-weight: 400;
+            margin-top: 2rem;
+            text-transform: none;
+            letter-spacing: 0.1em;
+            font-style: italic;
+        }
+
+        /* Meaning Page */
+        .meaning-page { background: var(--pink-accent); color: #1a1a1a; }
+        .meaning-box {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 1.5s ease;
+        }
+        .meaning-title { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 1rem; }
+        .meaning-text { text-transform: none; letter-spacing: normal; color: #444; font-size: 1.2rem; font-style: italic; }
+
+        /* --- UI CONTROLS --- */
+        .audio-control {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            z-index: 100;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .scroll-indicator {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            font-size: 0.6rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            opacity: 0.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .scroll-line-container { width: 80px; height: 1px; background: rgba(255,255,255,0.2); position: relative; overflow: hidden; }
+        .scroll-line-progress { position: absolute; left: 0; top: 0; height: 100%; width: 100%; background: white; transform: translateX(-100%); animation: scroll-progress 2.5s infinite; }
+
+        @keyframes scroll-progress {
+            0% { transform: translateX(-100%); }
+            40%, 60% { transform: translateX(0); }
+            100% { transform: translateX(100%); }
+        }
+
+        #sparkle-canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 10; }
+		
+		.gallery-page {
+			background: #000;
+		}
+
+		.gallery-page .content {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			justify-content: flex-start;
+			pointer-events: auto;
+		}
+
+		/* 🔥 Make header sticky */
+		.gallery-page h1,
+		.gallery-page p {
+			position: sticky;
+			top: 0;
+			background: #000;
+			z-index: 5;
+			padding-bottom: 10px;
+		}
+
+		/* 🔥 Scrollable grid container */
+		.gallery-grid {
+			flex: 1;
+			overflow-y: auto;
+			margin-top: 20px;
+			padding-right: 5px;
+
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+			gap: 12px;
+		}
+
+		/* Optional: smooth scroll */
+		.gallery-grid {
+			scroll-behavior: smooth;
+		}
+
+		/* Hide scrollbar (optional clean look) */
+		.gallery-grid::-webkit-scrollbar {
+			width: 4px;
+		}
+		.gallery-grid::-webkit-scrollbar-thumb {
+			background: rgba(255,255,255,0.2);
+			border-radius: 10px;
+		}
+		.gallery-grid {
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.gallery-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+			gap: 12px;
+			margin-top: 30px;
+			width: 100%;
+		}
+
+		.gallery-grid img {
+			width: 100%;
+			height: 120px;
+			object-fit: cover;
+			border-radius: 10px;
+			cursor: pointer;
+			transition: transform 0.3s ease;
+		}
+
+		.gallery-grid img:hover {
+			transform: scale(1.05);
+		}
+
+		/* FULLSCREEN VIEWER */
+		.lightbox {
+			position: fixed;
+			top: 0; left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.95);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 999;
+		}
+
+		.lightbox img {
+			max-width: 90%;
+			max-height: 85%;
+			border-radius: 10px;
+		}
+
+		.lightbox.active {
+			display: flex;
+		}
+
+		.nav-btn {
+			position: absolute;
+			top: 50%;
+			transform: translateY(-50%);
+			font-size: 2rem;
+			color: white;
+			cursor: pointer;
+			padding: 20px;
+		}
+
+		.prev { left: 20px; }
+		.next { right: 20px; }
+
+		.close-btn {
+			position: absolute;
+			top: 20px;
+			right: 30px;
+			font-size: 2rem;
+			cursor: pointer;
+		}
+		.gallery-page .content {
+			pointer-events: auto;
+		}
+
+		.gallery-grid img {
+			pointer-events: auto;
+		}
+		.lightbox {
+			z-index: 9999;
+		}
+		
+		@media (max-width: 768px) {
+			.page-bg,
+			.page-bg-new {
+				background-size: cover;
+				background-position: center top;
+				width: 100%;
+				height: 100%;
+				transform: none !important; /* disable parallax on mobile */
+			}
+
+			.content {
+				padding: 1.5rem;
+			}
+
+			h1 {
+				font-size: clamp(1.8rem, 6vw, 2.8rem);
+			}
+
+			p {
+				font-size: clamp(0.7rem, 2.5vw, 0.9rem);
+				letter-spacing: 0.15em;
+			}
+		}
+		
+    </style>
+</head>
+<body>
+
+    <canvas id="sparkle-canvas"></canvas>
+
+    <audio id="bg-music" loop>
+        <source src="src\song\background.m4a" type="audio/mpeg">
+    </audio>
+
+    <button class="audio-control" id="music-toggle">
+        <svg id="icon-mute" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+        <svg id="icon-unmute" style="display:none" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>
+    </button>
+
+    <div class="scroll-indicator" id="indicator">
+        <span>Use Mouse Wheel / Swipe</span>
+        <div class="scroll-line-container">
+            <div class="scroll-line-progress"></div>
+        </div>
+    </div>
+
+    <main class="storybook" id="storybook">
+        <!-- Chapter 1: SUGGESTION - Maternity Photo or Ultrasound -->
+        <section class="page">
+            <div class="page-bg" style="background-image: url('src\\images\\1.jpg')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <p>Chapter One</p>
+                <h1>Once upon a time, <br>a dream took flight.</h1>
+            </div>
+        </section>
+
+        <!-- Chapter 2: SUGGESTION - Nursery photo or baby shoes/clothes -->
+        <section class="page">
+            <div class="page-bg" style="background-image: url('src\\images\\2.png')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <p>The Long Wait</p>
+                <h1>We counted the days <br>by the beating of a heart.</h1>
+            </div>
+        </section>
+
+        <!-- Chapter 3: SUGGESTION - First hospital photo or holding hands -->
+        <section class="page">
+            <div class="page-bg" style="background-image: url('src\\images\\3.png')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <p>The Arrival</p>
+                <h1>And suddenly, <br>the world was brand new.</h1>
+            </div>
+        </section>
+
+        <!-- NAME REVEAL PAGE: SUGGESTION - Best Portrait of Vamika or a Family Photo -->
+        <section class="page reveal-page">
+            <div class="page-bg" style="background-image: url('src\\images\\4.jpg')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <p class="sub-text" style="color: white; opacity: 0.9;">Introducing our precious daughter</p>
+                <div class="reveal-name">Vamika Athira Ajith</div>
+                <p class="sub-text" style="color: white; opacity: 0.9;">Our joy, our heart, our forever.</p>
+            </div>
+        </section>
+
+        <!-- MEANING PAGE (Kept as solid color for readability) -->
+        <section class="page meaning-page">
+            <div class="content meaning-box">
+                <div class="meaning-title">Vamika</div>
+                <p class="meaning-text">An epithet of the Goddess Durga, meaning 'one who is situated on the left side (of Shiva)'. It signifies power, grace, and divinity.</p>
+            </div>
+        </section>
+
+        <!-- GALLERY PAGE 1: SUGGESTION - Close up of feet or fingers -->
+        <section class="page">
+            <div class="page-bg-new" style="background-image: url('src\\images\\5.jpg')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <h1>Ten tiny fingers, <br>ten tiny toes.</h1>
+                <p>She's a dream come true</p>
+            </div>
+        </section>
+
+        <!-- GALLERY PAGE 2: SUGGESTION - Sleeping photo -->
+        <section class="page">
+            <div class="page-bg-new" style="background-image: url('src\\images\\6.jpg')"></div>
+            <div class="page-overlay"></div>
+            <div class="content">
+                <h1>A lifetime of love <br>in one single look.</h1>
+                <p>Welcome home, Vamika</p>
+            </div>
+        </section>
+		<!-- Gallery -->
+		<section class="page gallery-page">
+			<div class="content">
+				<h1>Her Little World</h1>
+				<p>Moments we’ll cherish forever</p>
+
+				<div class="gallery-grid" id="gallery"></div>
+			</div>
+		</section>
+    </main>
+	<div class="lightbox" id="lightbox">
+		<span class="close-btn" onclick="closeLightbox()">×</span>
+		<span class="nav-btn prev" onclick="changeSlide(-1)">❮</span>
+		<img id="lightbox-img">
+		<span class="nav-btn next" onclick="changeSlide(1)">❯</span>
+	</div>
+
+    <script>
+        const storybook = document.getElementById('storybook');
+        const indicator = document.getElementById('indicator');
+        const pages = document.querySelectorAll('.page');
+        let currentPage = 0;
+        let isTransitioning = false;
+
+        // Wheel Event Logic
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (isTransitioning) return;
+            if (Math.abs(e.deltaY) < 10) return;
+
+            if (e.deltaY > 0) {
+                if (currentPage < pages.length - 1) {
+                    currentPage++;
+                    performScroll();
+                }
+            } else {
+                if (currentPage > 0) {
+                    currentPage--;
+                    performScroll();
+                }
+            }
+        }, { passive: false });
+
+        function performScroll() {
+            isTransitioning = true;
+            storybook.scrollTo({
+                left: currentPage * window.innerWidth,
+                behavior: 'smooth'
+            });
+            setTimeout(() => { isTransitioning = false; }, 800); 
+        }
+
+        storybook.addEventListener('scroll', () => {
+            const index = Math.round(storybook.scrollLeft / window.innerWidth);
+            if (!isTransitioning) currentPage = index;
+            
+            // Parallax effect on backgrounds
+            document.querySelectorAll('.page-bg').forEach((bg, i) => {
+                const pageStart = i * window.innerWidth;
+                const offset = (storybook.scrollLeft - pageStart) * 0.35;
+                bg.style.transform = `translateX(${offset}px)`;
+            });
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    const index = Array.from(pages).indexOf(entry.target);
+                    if (index === pages.length - 1) {
+                        indicator.style.opacity = '0';
+                    } else {
+                        indicator.style.opacity = '0.6';
+                        indicator.querySelector('span').innerText = index === 0 ? "Use Mouse Wheel / Swipe" : "Keep Scrolling";
+                    }
+                }
+            });
+        }, { threshold: 0.5 });
+
+        pages.forEach(page => observer.observe(page));
+
+        // Audio Setup
+        const music = document.getElementById('bg-music');
+        const musicBtn = document.getElementById('music-toggle');
+        const iconMute = document.getElementById('icon-mute');
+        const iconUnmute = document.getElementById('icon-unmute');
+
+        musicBtn.addEventListener('click', () => {
+            if (music.paused) {
+                music.play().catch(e => console.log("Audio play failed"));
+                iconMute.style.display = 'none';
+                iconUnmute.style.display = 'block';
+            } else {
+                music.pause();
+                iconMute.style.display = 'block';
+                iconUnmute.style.display = 'none';
+            }
+        });
+
+        // Sparkle Particles
+        const canvas = document.getElementById('sparkle-canvas');
+        const ctx = canvas.getContext('2d');
+        let sparkles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        class Sparkle {
+            constructor() { this.init(); }
+            init() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1.5;
+                this.opacity = Math.random();
+                this.speed = Math.random() * 0.2 + 0.05;
+                this.drift = (Math.random() - 0.5) * 0.2;
+            }
+            update() {
+                this.y -= this.speed;
+                this.x += this.drift;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.x < 0) this.x = canvas.width;
+                this.opacity = Math.sin(Date.now() * 0.001 + this.x) * 0.5 + 0.5;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.35})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<70; i++) sparkles.push(new Sparkle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            sparkles.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
+		
+		const gallery = document.getElementById("gallery");
+		const lightbox = document.getElementById("lightbox");
+		const lightboxImg = document.getElementById("lightbox-img");
+
+		let galleryImages = [];
+		let currentIndex = 0;
+
+		// ✅ Load from JSON (AUTO)
+		fetch("src/gallery/images.json")
+			.then(res => res.json())
+			.then(images => {
+				galleryImages = images.map(img => "src/gallery/" + img);
+
+				galleryImages.forEach((src, index) => {
+					const img = document.createElement("img");
+					img.src = src;
+					img.onclick = () => {
+						openLightbox(index);
+					};
+					gallery.appendChild(img);
+				});
+			});
+
+		function openLightbox(index) {
+			currentIndex = index;
+			lightbox.classList.add("active");
+			updateImage();
+		}
+
+		function closeLightbox() {
+			lightbox.classList.remove("active");
+		}
+
+		function changeSlide(direction) {
+			currentIndex += direction;
+
+			if (currentIndex < 0) currentIndex = galleryImages.length - 1;
+			if (currentIndex >= galleryImages.length) currentIndex = 0;
+
+			updateImage();
+		}
+
+		function updateImage() {
+			lightboxImg.src = galleryImages[currentIndex];
+		}
+		
+    </script>
+</body>
+</html>
